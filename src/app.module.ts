@@ -8,6 +8,9 @@ import { ProductosModule } from './productos/productos.module';
 import { VentasModule } from './ventas/ventas.module';
 import { ComprasModule } from './compras/compras.module';
 import { SesionesCajaModule } from './sesiones-caja/sesiones-caja.module';
+import { GastosModule } from './gastos/gastos.module';
+import { CuentasPorCobrarModule } from './cuentas-por-cobrar/cuentas-por-cobrar.module'; // <--- AÑADE ESTA LÍNEA
+import { AbonosClientesModule } from './abonos-clientes/abonos-clientes.module';
 
 @Module({
   imports: [
@@ -33,6 +36,9 @@ import { SesionesCajaModule } from './sesiones-caja/sesiones-caja.module';
     VentasModule,
     ComprasModule,
     SesionesCajaModule,
+    GastosModule,
+    CuentasPorCobrarModule,
+    AbonosClientesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
