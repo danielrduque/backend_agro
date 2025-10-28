@@ -8,7 +8,7 @@ import {
 import { Cotizacion } from '../../cotizaciones/entities/cotizacion.entity';
 import { Producto } from '../../productos/entities/producto.entity';
 
-@Entity('Detalle_Cotizaciones')
+@Entity('detalle_cotizaciones')
 export class DetalleCotizacion {
   @PrimaryGeneratedColumn({ name: 'detalle_cotizacion_id' })
   detalle_cotizacion_id: number;

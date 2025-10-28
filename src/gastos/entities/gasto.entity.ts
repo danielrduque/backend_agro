@@ -10,7 +10,7 @@ import { SesionCaja } from '../../sesiones-caja/entities/sesion-caja.entity';
 import { CategoriaGasto } from '../../categorias-gasto/entities/categoria-gasto.entity';
 import { MetodoPago } from '../../metodos-pago/entities/metodo-pago.entity';
 
-@Entity('Gastos')
+@Entity('gastos')
 export class Gasto {
   @PrimaryGeneratedColumn({ name: 'gasto_id' })
   gasto_id: number;

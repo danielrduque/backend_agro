@@ -13,7 +13,7 @@ import { MetodoPago } from '../../metodos-pago/entities/metodo-pago.entity';
 import { VentaEstado } from '../../ventas-estados/entities/venta-estado.entity';
 import { DetalleVenta } from '../../detalle-ventas/entities/detalle-venta.entity';
 
-@Entity('Ventas')
+@Entity('ventas')
 export class Venta {
   @PrimaryGeneratedColumn({ name: 'venta_id' })
   venta_id: number;

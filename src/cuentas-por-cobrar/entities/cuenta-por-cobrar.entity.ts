@@ -9,7 +9,7 @@ import { Venta } from '../../ventas/entities/venta.entity';
 import { Cliente } from '../../clientes/entities/cliente.entity';
 import { CuentaEstado } from '../../cuentas-estados/entities/cuenta-estado.entity';
 
-@Entity('Cuentas_Por_Cobrar')
+@Entity('cuentas_por_cobrar')
 export class CuentaPorCobrar {
   @PrimaryGeneratedColumn({ name: 'cuenta_cobrar_id' })
   cuenta_cobrar_id: number;

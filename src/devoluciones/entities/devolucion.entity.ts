@@ -11,7 +11,7 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { SesionCaja } from '../../sesiones-caja/entities/sesion-caja.entity';
 import { DetalleDevolucion } from '../../detalle-devoluciones/entities/detalle-devolucion.entity';
 
-@Entity('Devoluciones_Venta')
+@Entity('devoluciones_venta')
 export class DevolucionVenta {
   @PrimaryGeneratedColumn({ name: 'devolucion_id' })
   devolucion_id: number;

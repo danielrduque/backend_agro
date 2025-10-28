@@ -9,7 +9,7 @@ import { TipoItem } from '../../tipos-item/entities/tipo-item.entity';
 import { CategoriaProducto } from '../../categorias-producto/entities/categoria-producto.entity';
 import { Proveedor } from '../../proveedores/entities/proveedor.entity';
 
-@Entity('Productos')
+@Entity('productos')
 export class Producto {
   @PrimaryGeneratedColumn({ name: 'producto_id' })
   producto_id: number;

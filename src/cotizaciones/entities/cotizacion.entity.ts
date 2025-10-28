@@ -11,7 +11,7 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { CotizacionEstado } from '../../cotizaciones-estados/entities/cotizacion-estado.entity';
 import { DetalleCotizacion } from '../../detalle-cotizaciones/entities/detalle-cotizacion.entity';
 
-@Entity('Cotizaciones')
+@Entity('cotizaciones')
 export class Cotizacion {
   @PrimaryGeneratedColumn({ name: 'cotizacion_id' })
   cotizacion_id: number;

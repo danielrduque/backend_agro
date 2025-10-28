@@ -9,7 +9,7 @@ import { CuentaPorPagar } from '../../cuentas-por-pagar/entities/cuenta-por-paga
 import { SesionCaja } from '../../sesiones-caja/entities/sesion-caja.entity';
 import { MetodoPago } from '../../metodos-pago/entities/metodo-pago.entity';
 
-@Entity('Abonos_Proveedores')
+@Entity('abonos_proveedores')
 export class AbonoProveedor {
   @PrimaryGeneratedColumn({ name: 'abono_proveedor_id' })
   abono_proveedor_id: number;

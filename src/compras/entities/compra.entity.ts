@@ -11,7 +11,7 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { MetodoPago } from '../../metodos-pago/entities/metodo-pago.entity';
 import { DetalleCompra } from '../../detalle-compras/entities/detalle-compra.entity';
 
-@Entity('Compras')
+@Entity('compras')
 export class Compra {
   @PrimaryGeneratedColumn({ name: 'compra_id' })
   compra_id: number;

@@ -8,7 +8,7 @@ import {
 import { DevolucionVenta } from '../../devoluciones/entities/devolucion.entity';
 import { Producto } from '../../productos/entities/producto.entity';
 
-@Entity('Detalle_Devoluciones')
+@Entity('detalle_devoluciones')
 export class DetalleDevolucion {
   @PrimaryGeneratedColumn({ name: 'detalle_devolucion_id' })
   detalle_devolucion_id: number;

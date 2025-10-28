@@ -9,7 +9,7 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { Caja } from '../../cajas/entities/caja.entity';
 import { SesionCajaEstado } from '../../sesiones-caja-estados/entities/sesion-caja-estado.entity';
 
-@Entity('Sesiones_Caja')
+@Entity('sesiones_caja')
 export class SesionCaja {
   @PrimaryGeneratedColumn({ name: 'sesion_id' })
   sesion_id: number;
