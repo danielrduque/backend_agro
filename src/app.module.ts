@@ -13,6 +13,10 @@ import { CuentasPorCobrarModule } from './cuentas-por-cobrar/cuentas-por-cobrar.
 import { AbonosClientesModule } from './abonos-clientes/abonos-clientes.module';
 import { CuentasPorPagarModule } from './cuentas-por-pagar/cuentas-por-pagar.module';
 import { AbonosProveedoresModule } from './abonos-proveedores/abonos-proveedores.module';
+import { CajasModule } from './cajas/cajas.module';
+import { RolesModule } from './roles/roles.module';
+import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
 
 @Module({
   imports: [
@@ -43,6 +47,10 @@ import { AbonosProveedoresModule } from './abonos-proveedores/abonos-proveedores
     AbonosClientesModule,
     CuentasPorPagarModule,
     AbonosProveedoresModule,
+    CajasModule,
+    RolesModule,
+    MetodosPagoModule,
+    UsuariosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,4 +1,3 @@
-// src/abonos-clientes/abonos-clientes.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AbonosClientesController } from './abonos-clientes.controller';
@@ -8,6 +7,7 @@ import { CuentaPorCobrar } from '../cuentas-por-cobrar/entities/cuenta-por-cobra
 
 @Module({
   imports: [TypeOrmModule.forFeature([AbonoCliente, CuentaPorCobrar])],
+  // --- ¡LÍNEA CLAVE! ---
   controllers: [AbonosClientesController],
   providers: [AbonosClientesService],
 })

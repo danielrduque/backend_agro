@@ -1,4 +1,3 @@
-// src/gastos/gastos.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GastosController } from './gastos.controller';
@@ -19,6 +18,7 @@ import { SesionCaja } from '../sesiones-caja/entities/sesion-caja.entity';
       SesionCaja,
     ]),
   ],
+  // --- ¡LÍNEA CLAVE! ---
   controllers: [GastosController],
   providers: [GastosService],
 })
