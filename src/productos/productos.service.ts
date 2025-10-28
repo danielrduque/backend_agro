@@ -34,6 +34,21 @@ export class ProductosService {
   }
 
   /**
+   * @description Genera un reporte de productos que están por debajo del stock mínimo.
+   * @returns Un arreglo de productos con bajo stock.
+   */
+  async findWithLowStock(): Promise<Producto[]> {
+    return (
+      this.productoRepository
+        .createQueryBuilder('producto')
+        .where('producto.stock_actual <= producto.stock_minimo')
+        // Solo nos interesan los que tienen un stock mínimo configurado mayor a cero
+        .andWhere('producto.stock_minimo > 0')
+        .getMany()
+    );
+  }
+
+  /**
    * @description Busca un producto por su ID.
    * @param id El ID del producto a buscar.
    * @returns El producto encontrado.

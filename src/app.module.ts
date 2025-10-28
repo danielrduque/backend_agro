@@ -6,6 +6,8 @@ import { AppService } from './app.service';
 import { ClientesModule } from './clientes/clientes.module';
 import { ProductosModule } from './productos/productos.module';
 import { VentasModule } from './ventas/ventas.module';
+import { ComprasModule } from './compras/compras.module';
+import { SesionesCajaModule } from './sesiones-caja/sesiones-caja.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { VentasModule } from './ventas/ventas.module';
     ClientesModule,
     ProductosModule,
     VentasModule,
+    ComprasModule,
+    SesionesCajaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

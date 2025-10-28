@@ -27,6 +27,14 @@ export class ProductosController {
     return this.productosService.findAll();
   }
 
+  /**
+   * @description Endpoint para obtener productos con stock bajo.
+   */
+  @Get('stock/low')
+  findLowStock() {
+    return this.productosService.findWithLowStock();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.productosService.findOne(id);
