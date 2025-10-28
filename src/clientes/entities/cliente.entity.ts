@@ -7,12 +7,12 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany, // Importa OneToMany
 } from 'typeorm';
-// Importaremos estas entidades más adelante cuando las creemos.
-// import { TipoDocumento } from '../../tipos-documento/entities/tipo-documento.entity';
-// import { ListaPrecios } from '../../listas-precios/entities/lista-precios.entity';
+import { Venta } from '../../ventas/entities/venta.entity'; // Asegúrate de que la ruta sea correcta
+import { CuentaPorCobrar } from '../../cuentas-por-cobrar/entities/cuenta-por-cobrar.entity'; // Asegúrate de que la ruta sea correcta
 
-@Entity('clientes') // Este nombre debe coincidir con el de tu tabla en la base de datos
+@Entity('clientes')
 export class Cliente {
   @PrimaryGeneratedColumn()
   cliente_id: number;
@@ -20,10 +20,6 @@ export class Cliente {
   @Column({ type: 'varchar', length: 150, nullable: false })
   nombre_completo: string;
 
-  // --- Relaciones ---
-  // Aún no hemos creado la entidad TipoDocumento, pero así se vería la relación.
-  // @ManyToOne(() => TipoDocumento)
-  // @JoinColumn({ name: 'tipo_documento_id' }) // Especifica la columna de la clave foránea
   @Column({ type: 'int', nullable: false })
   tipo_documento_id: number;
 
@@ -39,13 +35,16 @@ export class Cliente {
   @Column({ type: 'text', nullable: true })
   direccion: string;
 
-  // --- Relaciones ---
-  // Así se vería la relación con Listas_Precios.
-  // @ManyToOne(() => ListaPrecios)
-  // @JoinColumn({ name: 'lista_precio_id' })
   @Column({ type: 'int', default: 1 })
   lista_precio_id: number;
 
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   fecha_creacion: Date;
+
+  // --- NUEVAS RELACIONES ---
+  @OneToMany(() => Venta, (venta) => venta.cliente)
+  ventas: Venta[];
+
+  @OneToMany(() => CuentaPorCobrar, (cuenta) => cuenta.cliente)
+  cuentas_por_cobrar: CuentaPorCobrar[];
 }

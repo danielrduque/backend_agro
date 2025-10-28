@@ -24,6 +24,11 @@ export class VentasController {
     return this.ventasService.findAll();
   }
 
+  @Get(':id/receipt')
+  getVentaReceipt(@Param('id', ParseIntPipe) id: number) {
+    return this.ventasService.getVentaReceipt(id);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ventasService.findOne(id);

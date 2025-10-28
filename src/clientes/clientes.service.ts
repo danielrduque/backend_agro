@@ -24,21 +24,33 @@ export class ClientesService {
   }
 
   /**
-   * @description Obtiene una lista de todos los clientes.
+   * @description Obtiene una lista de todos los clientes con su historial.
    * @returns Un arreglo de clientes.
    */
   async findAll(): Promise<Cliente[]> {
-    return this.clienteRepository.find();
+    // MODIFICACIÓN: Añadimos las relaciones
+    return this.clienteRepository.find({
+      relations: ['ventas', 'cuentas_por_cobrar'],
+    });
   }
 
   /**
-   * @description Busca un cliente específico por su ID.
+   * @description Busca un cliente específico por su ID con todo su historial.
    * @param id El ID del cliente a buscar.
    * @returns El cliente encontrado.
    * @throws NotFoundException si no se encuentra el cliente.
    */
   async findOne(id: number): Promise<Cliente> {
-    const cliente = await this.clienteRepository.findOneBy({ cliente_id: id });
+    // MODIFICACIÓN: Añadimos más relaciones para un detalle completo
+    const cliente = await this.clienteRepository.findOne({
+      where: { cliente_id: id },
+      relations: [
+        'ventas',
+        'cuentas_por_cobrar',
+        'ventas.detalles',
+        'ventas.detalles.producto',
+      ],
+    });
     if (!cliente) {
       throw new NotFoundException(`Cliente con ID #${id} no encontrado.`);
     }
