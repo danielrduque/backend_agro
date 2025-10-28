@@ -1,35 +1,26 @@
-import { IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+// src/sesiones-caja/dto/create-sesion-caja.dto.ts
+import { IsInt, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSesionCajaDto {
-  @ApiProperty({ required: true })
+  @ApiProperty({
+    required: true,
+    description: 'ID del usuario que abre la caja',
+  })
   @IsInt()
   usuario_id: number;
 
-  @ApiProperty({ required: true })
+  @ApiProperty({
+    required: true,
+    description: 'ID de la caja física que se está abriendo',
+  })
   @IsInt()
   caja_id: number;
 
-  @ApiProperty({ required: true })
-  @IsInt()
-  estado_id: number;
-
-  @ApiProperty({ required: true })
+  @ApiProperty({
+    required: true,
+    description: 'Monto inicial o base con el que empieza la caja',
+  })
   @IsNumber()
   monto_base_inicial: number;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsNumber()
-  monto_contado_final?: number;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsNumber()
-  monto_esperado_final?: number;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  notas_cierre?: string;
 }

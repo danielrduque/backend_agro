@@ -70,10 +70,6 @@ export class CreateVentaDto {
 
   @ApiProperty({ required: true })
   @IsInt()
-  usuario_id: number;
-
-  @ApiProperty({ required: true })
-  @IsInt()
   sesion_caja_id: number;
 
   @ApiProperty({ required: true })

@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -15,6 +16,7 @@ export class Usuario {
   @Column({ type: 'varchar', length: 50, unique: true })
   nombre_usuario: string;
 
+  @Exclude()
   @Column({ type: 'varchar', length: 255 })
   hash_contrasena: string;
 

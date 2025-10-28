@@ -6,7 +6,10 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { VentasService } from './ventas.service';
 import { CreateVentaDto } from './dto/create-venta.dto';
 
@@ -14,9 +17,11 @@ import { CreateVentaDto } from './dto/create-venta.dto';
 export class VentasController {
   constructor(private readonly ventasService: VentasService) {}
 
+  @UseGuards(AuthGuard('jwt')) // Ahora TypeScript sabe qué es "AuthGuard"
   @Post()
-  create(@Body() createVentaDto: CreateVentaDto) {
-    return this.ventasService.create(createVentaDto);
+  create(@Request() req, @Body() createVentaDto: CreateVentaDto) {
+    // Y también "Request"
+    return this.ventasService.create(createVentaDto, req.user);
   }
 
   @Get()

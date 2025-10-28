@@ -1,6 +1,10 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core'; // 👈 1. Importa Reflector
 import { AppModule } from './app.module';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  ClassSerializerInterceptor, // 👈 2. Importa ClassSerializerInterceptor
+} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function setupSwagger(app: INestApplication) {
@@ -8,6 +12,8 @@ async function setupSwagger(app: INestApplication) {
     .setTitle('backend_agro API')
     .setDescription('API documentation for the backend_agro project')
     .setVersion('1.0')
+    // 👇 **BONUS: Añadí esto para que puedas probar el login desde Swagger**
+    .addBearerAuth()
     .build();
 
   try {
@@ -16,8 +22,6 @@ async function setupSwagger(app: INestApplication) {
     console.log('Swagger UI is running on /api/docs');
   } catch (error) {
     console.error('Swagger setup failed', error);
-    // Este bloque de código es un fallback en caso de que Swagger no pueda escanear todos los módulos.
-    // Intenta crear el documento solo con los módulos que tienen controladores explícitos.
     console.log(
       'Attempting to generate Swagger doc with a safe subset of modules...',
     );
@@ -50,10 +54,8 @@ async function setupSwagger(app: INestApplication) {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Prefijo global
   app.setGlobalPrefix('api');
 
-  // Pipe de validación global
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -62,7 +64,11 @@ async function bootstrap() {
     }),
   );
 
-  // Configurar Swagger
+  // 👇 **3. AÑADE ESTAS LÍNEAS**
+  // Esto activa el interceptor global para transformar las respuestas
+  // y respetar los decoradores como @Exclude().
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
   await setupSwagger(app);
 
   await app.listen(process.env.PORT ?? 3001);

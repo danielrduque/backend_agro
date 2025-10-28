@@ -17,6 +17,7 @@ import { CajasModule } from './cajas/cajas.module';
 import { RolesModule } from './roles/roles.module';
 import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     RolesModule,
     MetodosPagoModule,
     UsuariosModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

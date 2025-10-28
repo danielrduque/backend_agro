@@ -28,6 +28,13 @@ export class SesionesCajaController {
     return this.sesionesCajaService.cerrarCaja(id, cerrarSesionDto);
   }
 
+  @Get()
+  findAll() {
+    // Este método necesita ser creado en tu servicio.
+    // Si no existe, lo creamos en el siguiente paso.
+    return this.sesionesCajaService.findAll();
+  }
+
   @Get('caja/:cajaId/estado')
   obtenerEstadoActual(@Param('cajaId', ParseIntPipe) cajaId: number) {
     return this.sesionesCajaService.obtenerEstadoActual(cajaId);

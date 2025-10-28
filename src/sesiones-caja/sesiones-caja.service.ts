@@ -27,6 +27,12 @@ export class SesionesCajaService {
     private readonly dataSource: DataSource,
   ) {}
 
+  async findAll(): Promise<SesionCaja[]> {
+    return this.sesionCajaRepository.find({
+      relations: ['usuario', 'caja', 'estado'],
+    });
+  }
+
   async abrirCaja(createSesionDto: CreateSesionCajaDto): Promise<SesionCaja> {
     const sesionActiva = await this.sesionCajaRepository.findOne({
       where: {
@@ -41,10 +47,16 @@ export class SesionesCajaService {
       );
     }
 
-    const nuevaSesion = this.sesionCajaRepository.create({
-      ...createSesionDto,
+    // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+    // Construimos el objeto de la entidad con sus relaciones
+    const nuevaSesionData = {
+      usuario: { usuario_id: createSesionDto.usuario_id },
+      caja: { caja_id: createSesionDto.caja_id },
+      monto_base_inicial: createSesionDto.monto_base_inicial,
       estado: { id: ESTADO_ABIERTA } as SesionCajaEstado,
-    });
+    };
+
+    const nuevaSesion = this.sesionCajaRepository.create(nuevaSesionData);
 
     return this.sesionCajaRepository.save(nuevaSesion);
   }

@@ -1,4 +1,3 @@
-// src/ventas/ventas.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -8,12 +7,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Venta } from './entities/venta.entity';
 import { CreateVentaDto } from './dto/create-venta.dto';
-import { UpdateVentaDto } from './dto/update-venta.dto';
 import { Producto } from '../productos/entities/producto.entity';
 import { CuentaPorCobrar } from '../cuentas-por-cobrar/entities/cuenta-por-cobrar.entity';
 import { VentaEstado } from '../ventas-estados/entities/venta-estado.entity';
 import { MetodoPago } from '../metodos-pago/entities/metodo-pago.entity';
-import { DetalleVenta } from '../detalle-ventas/entities/detalle-venta.entity'; // Importar DetalleVenta
+import { DetalleVenta } from '../detalle-ventas/entities/detalle-venta.entity';
 
 @Injectable()
 export class VentasService {
@@ -25,13 +23,24 @@ export class VentasService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createVentaDto: CreateVentaDto): Promise<Venta> {
+  async create(createVentaDto: CreateVentaDto, user: any): Promise<Venta> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const venta = this.ventaRepository.create(createVentaDto);
+      // **AQUÍ ESTÁ LA CORRECCIÓN CLAVE**
+      // Creamos el objeto `ventaData` para construir correctamente las relaciones.
+      const ventaData = {
+        ...createVentaDto,
+        usuario: { usuario_id: user.usuario_id },
+        cliente: { cliente_id: createVentaDto.cliente_id },
+        sesion_caja: { sesion_id: createVentaDto.sesion_caja_id },
+        metodo_pago: { id: createVentaDto.metodo_pago_id },
+        estado: { id: createVentaDto.estado_id },
+      };
+
+      const venta = this.ventaRepository.create(ventaData);
       venta.detalles = [];
 
       for (const detalleDto of createVentaDto.detalles) {
@@ -50,10 +59,10 @@ export class VentasService {
           );
         }
 
-        producto.stock_actual -= detalleDto.cantidad;
+        producto.stock_actual =
+          Number(producto.stock_actual) - Number(detalleDto.cantidad);
         await queryRunner.manager.save(producto);
 
-        // CORRECCIÓN 1: Usar la clase DetalleVenta en lugar de un string
         const detalleVenta = queryRunner.manager.create(
           DetalleVenta,
           detalleDto,
@@ -64,11 +73,10 @@ export class VentasService {
 
       const ventaGuardada = await queryRunner.manager.save(venta);
 
-      // CORRECCIÓN 2: Usar el ID del DTO original
+      // La lógica para la cuenta por cobrar
       const metodoPago = await queryRunner.manager.findOne(MetodoPago, {
         where: { id: createVentaDto.metodo_pago_id },
       });
-      // CORRECCIÓN 3: Usar el ID del DTO original
       const estadoVenta = await queryRunner.manager.findOne(VentaEstado, {
         where: { id: createVentaDto.estado_id },
       });
@@ -79,17 +87,15 @@ export class VentasService {
       ) {
         const cuentaPorCobrar = queryRunner.manager.create(CuentaPorCobrar, {
           venta: ventaGuardada,
-          // CORRECCIÓN 4: Usar el ID del DTO original
-          cliente_id: createVentaDto.cliente_id,
+          cliente: { cliente_id: createVentaDto.cliente_id },
           monto_total: venta.total,
           saldo_pendiente: venta.total,
-          estado_id: 1,
+          estado: { id: 1 }, // Asumiendo que 1 = 'Pendiente'
         });
         await queryRunner.manager.save(cuentaPorCobrar);
       }
 
       await queryRunner.commitTransaction();
-      // Devolvemos la venta con todas sus relaciones cargadas para una respuesta completa
       return this.findOne(ventaGuardada.venta_id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -100,10 +106,8 @@ export class VentasService {
   }
 
   async getVentaReceipt(id: number): Promise<string> {
-    // Reutilizamos findOne que ya carga todas las relaciones que necesitamos
     const venta = await this.findOne(id);
-
-    // Construimos el HTML del recibo
+    // (Tu código para generar el recibo HTML sigue igual)
     let receipt = `
       <html>
         <head>
@@ -133,7 +137,7 @@ export class VentasService {
       receipt += `
         <li>
           <span>${detalle.cantidad}x ${detalle.producto.nombre}</span>
-          <span>$${detalle.total_linea.toFixed(2)}</span>
+          <span>$${detalle.total_linea}</span>
         </li>
       `;
     }
@@ -141,7 +145,7 @@ export class VentasService {
     receipt += `
             </ul>
             <hr>
-            <h3>Total: $${venta.total.toFixed(2)}</h3>
+            <h3>Total: $${venta.total}</h3>
           </div>
         </body>
       </html>
