@@ -22,13 +22,16 @@ export class AbonosProveedoresService {
   async create(
     createAbonoDto: CreateAbonoProveedorDto,
   ): Promise<AbonoProveedor> {
+    // Iniciamos la transacción (QueryRunner)
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.startTransaction();
+    await queryRunner.startTransaction(); // <-- "Modo 'Todo o Nada' activado"
 
     try {
       const { cuenta_pagar_id, monto } = createAbonoDto;
 
+      // --- ¡AQUÍ SE MANEJA LA CONCURRENCIA! ---
+      // Buscamos la cuenta por pagar DENTRO de la transacción.
       const cuentaPorPagar = await queryRunner.manager.findOne(CuentaPorPagar, {
         where: { cuenta_pagar_id },
       });
@@ -39,6 +42,7 @@ export class AbonosProveedoresService {
         );
       }
 
+      // (Validación de negocio)
       if (Number(monto) > Number(cuentaPorPagar.saldo_pendiente)) {
         throw new BadRequestException(
           `El monto del abono ($${monto}) no puede ser mayor al saldo pendiente ($${cuentaPorPagar.saldo_pendiente}).`,
@@ -49,23 +53,31 @@ export class AbonosProveedoresService {
       cuentaPorPagar.saldo_pendiente =
         Number(cuentaPorPagar.saldo_pendiente) - Number(monto);
 
-      // Si se salda la deuda, cambiamos el estado
       if (cuentaPorPagar.saldo_pendiente === 0) {
-        cuentaPorPagar.estado = { id: 2 } as CuentaEstado; // Asumiendo que 2 = 'Pagada'
+        cuentaPorPagar.estado = { id: 2 } as CuentaEstado; // Asumiendo 2 = 'Pagada'
       }
 
+      // *EXPLICACIÓN DE CONCURRENCIA*:
+      // Al guardar la 'cuentaPorPagar' actualizada, la base de datos
+      // PONE EN ESPERA (bloquea) a cualquier otra persona que intente
+      // modificar ESTA MISMA cuenta por pagar.
+      // Esto asegura que los pagos se descuenten en orden y el saldo
+      // siempre sea correcto.
       await queryRunner.manager.save(cuentaPorPagar);
 
       // Creamos el registro del abono
       const abono = this.abonoRepository.create(createAbonoDto);
       const abonoGuardado = await queryRunner.manager.save(abono);
 
+      // --- ¡ÉXITO! ---
       await queryRunner.commitTransaction();
       return abonoGuardado;
     } catch (error) {
+      // --- ¡FALLO! ---
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
+      // Liberamos el controlador.
       await queryRunner.release();
     }
   }

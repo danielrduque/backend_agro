@@ -18,7 +18,13 @@ import { RolesModule } from './roles/roles.module';
 import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
-
+import { RedisModule } from './redis/redis.module';
+import { DevolucionesModule } from './devoluciones/devoluciones.module';
+import { CotizacionesModule } from './cotizaciones/cotizaciones.module';
+import { SeedModule } from './seed/seed.module';
+import { ListasPreciosModule } from './listas-precios/listas-precios.module';
+import { PreciosProductoModule } from './precios-producto/precios-producto.module';
+import { ReportesModule } from './reportes/reportes.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -38,6 +44,7 @@ import { AuthModule } from './auth/auth.module';
         logging: config.get('TYPEORM_LOGGING') === 'true',
       }),
     }),
+    RedisModule,
     ClientesModule,
     ProductosModule,
     VentasModule,
@@ -53,6 +60,12 @@ import { AuthModule } from './auth/auth.module';
     MetodosPagoModule,
     UsuariosModule,
     AuthModule,
+    DevolucionesModule,
+    CotizacionesModule,
+    SeedModule,
+    ListasPreciosModule,
+    PreciosProductoModule,
+    ReportesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

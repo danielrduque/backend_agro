@@ -69,6 +69,11 @@ export class CreateProductoDto {
   @IsNumber()
   precio_costo_unitario?: number;
 
+  // 👇 AGREGA ESTO
+  @ApiProperty({ description: 'Precio de venta al público', example: 50000 })
+  @IsNumber()
+  precio_venta: number;
+
   @ApiProperty({
     required: true,
     description: 'Unidad de medida del producto',

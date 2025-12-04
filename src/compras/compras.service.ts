@@ -23,10 +23,11 @@ export class ComprasService {
    * @returns La compra creada con sus detalles.
    */
   async create(createCompraDto: CreateCompraDto): Promise<Compra> {
-    // Usamos una transacción para asegurar la integridad de los datos
+    // Usamos una transacción (QueryRunner) para asegurar que la actualización
+    // del stock y la creación de la compra sean una sola operación (atómica).
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.startTransaction();
+    await queryRunner.startTransaction(); // <-- "Modo 'Todo o Nada' activado"
 
     try {
       const compra = this.compraRepository.create(createCompraDto);
@@ -34,6 +35,7 @@ export class ComprasService {
 
       // Iteramos sobre los detalles para actualizar el stock de cada producto
       for (const detalleDto of createCompraDto.detalles) {
+        // Buscamos el producto usando el "controlador" de la transacción
         const producto = await queryRunner.manager.findOne(Producto, {
           where: { producto_id: detalleDto.producto_id },
         });
@@ -44,11 +46,20 @@ export class ComprasService {
           );
         }
 
-        // --- ¡Lógica clave! Aumentamos el stock ---
+        // --- ¡AQUÍ SE MANEJA LA CONCURRENCIA! ---
+        // Esta es la lógica clave: Aumentamos el stock.
         producto.stock_actual =
           Number(producto.stock_actual) + Number(detalleDto.cantidad);
+
+        // *EXPLICACIÓN DE CONCURRENCIA*:
+        // Al igual que en Ventas, esta línea PONE EN ESPERA (bloquea)
+        // a cualquier otra persona (como un vendedor) que intente
+        // modificar ESTE MISMO producto.
+        // Así evitamos que una venta lea un stock "viejo"
+        // mientras la compra aún no se ha confirmado.
         await queryRunner.manager.save(producto);
 
+        // (Preparamos el detalle de la compra para guardarlo)
         const detalleCompra = queryRunner.manager.create(
           DetalleCompra,
           detalleDto,
@@ -57,16 +68,23 @@ export class ComprasService {
         compra.detalles.push(detalleCompra);
       }
 
+      // Guardamos la compra principal (aún "en borrador" dentro de la tx)
       const compraGuardada = await queryRunner.manager.save(compra);
+
+      // --- ¡ÉXITO! ---
+      // Si todo salió bien, "confirmamos" todos los cambios.
+      // El nuevo stock de los productos ahora es visible para todos.
       await queryRunner.commitTransaction();
 
       return this.findOne(compraGuardada.compra_id); // Devolvemos la compra completa
     } catch (error) {
-      // Si algo falla, revertimos todos los cambios
+      // --- ¡FALLO! ---
+      // Si algo falló (ej. el producto no existía), revertimos TODO.
+      // El stock nunca se aumentó y la compra no se creó.
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
-      // Liberamos el queryRunner
+      // Siempre liberamos el controlador al final.
       await queryRunner.release();
     }
   }

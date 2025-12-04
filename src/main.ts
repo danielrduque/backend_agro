@@ -1,61 +1,15 @@
-import { NestFactory, Reflector } from '@nestjs/core'; // 👈 1. Importa Reflector
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import {
-  INestApplication,
-  ValidationPipe,
-  ClassSerializerInterceptor, // 👈 2. Importa ClassSerializerInterceptor
-} from '@nestjs/common';
+import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-
-async function setupSwagger(app: INestApplication) {
-  const config = new DocumentBuilder()
-    .setTitle('backend_agro API')
-    .setDescription('API documentation for the backend_agro project')
-    .setVersion('1.0')
-    // 👇 **BONUS: Añadí esto para que puedas probar el login desde Swagger**
-    .addBearerAuth()
-    .build();
-
-  try {
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
-    console.log('Swagger UI is running on /api/docs');
-  } catch (error) {
-    console.error('Swagger setup failed', error);
-    console.log(
-      'Attempting to generate Swagger doc with a safe subset of modules...',
-    );
-    try {
-      const appContainer = (app as any).container;
-      const modules = [...appContainer.getModules().values()];
-
-      const safeModules = modules.filter(
-        (module) =>
-          module &&
-          typeof module.getRoutes === 'function' &&
-          module.getRoutes().size > 0,
-      );
-      const includableModules = safeModules.map((module) => module.metatype);
-
-      const partialDocument = SwaggerModule.createDocument(app, config, {
-        include: includableModules,
-      });
-
-      SwaggerModule.setup('api/docs', app, partialDocument);
-      console.log(
-        `Swagger UI is running on /api/docs with ${includableModules.length} modules.`,
-      );
-    } catch (fallbackError) {
-      console.error('Fallback Swagger setup also failed', fallbackError);
-    }
-  }
-}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Prefijo global para la API
   app.setGlobalPrefix('api');
 
+  // Configuración de Pipes globales para validación
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -64,13 +18,20 @@ async function bootstrap() {
     }),
   );
 
-  // 👇 **3. AÑADE ESTAS LÍNEAS**
-  // Esto activa el interceptor global para transformar las respuestas
-  // y respetar los decoradores como @Exclude().
+  // Interceptor para serialización de clases (respetar @Exclude, etc.)
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
-  await setupSwagger(app);
+  // Configuración de Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Backend Agro API')
+    .setDescription('Documentación de la API para el proyecto Agro')
+    .setVersion('1.0')
+    .addBearerAuth() // Para autenticación JWT en Swagger UI
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document); // La UI estará en /api
 
+  // Iniciar la aplicación
   await app.listen(process.env.PORT ?? 3001);
 }
 

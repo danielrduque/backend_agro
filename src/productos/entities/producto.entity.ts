@@ -38,6 +38,9 @@ export class Producto {
   @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
   precio_costo_unitario: number;
 
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  precio_venta: number;
+
   @Column({ type: 'varchar', length: 20 })
   unidad_medida: string;
 
