@@ -94,6 +94,14 @@ export class CreateCompraDto {
   metodo_pago_id: number;
 
   @ApiProperty({
+    required: false,
+    description: 'ID de la sesión de caja (para descontar en arqueo)',
+  })
+  @IsOptional()
+  @IsInt()
+  sesion_caja_id?: number;
+
+  @ApiProperty({
     required: true,
     description: 'Detalles de la compra',
     type: CreateDetalleCompraDto,

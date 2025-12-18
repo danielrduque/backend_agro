@@ -3,13 +3,15 @@
 import {
   Controller,
   Post,
+  Get,
   UseGuards,
   Request,
-  Headers, // 👈 Importamos Headers
-  HttpCode, // 👈 Importamos HttpCode
+  Res,
+  Headers,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -28,8 +30,6 @@ export class AuthController {
    */
   @UseGuards(AuthGuard('jwt'))
   @Post('logout')
-  // 1. CAMBIO: Quitamos @HttpCode(204)
-  // 2. CAMBIO: Cambiamos el tipo de retorno a Promise<object>
   async logout(@Headers('Authorization') authHeader: string): Promise<object> {
     if (authHeader) {
       const token = authHeader.split(' ')[1];
@@ -37,9 +37,49 @@ export class AuthController {
         await this.authService.logout(token);
       }
     }
-    // 3. CAMBIO: Devolvemos un mensaje JSON
     return {
       message: 'Sesión cerrada exitosamente, token añadido a blacklist',
     };
   }
+
+  // =========================================
+  // GOOGLE OAUTH 2.0
+  // =========================================
+
+  /**
+   * @description Inicia el flujo de autenticación con Google
+   */
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Este método no hace nada; Passport redirige a Google
+  }
+
+  /**
+   * @description Callback de Google OAuth. Crea/valida usuario y genera JWT
+   */
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Request() req, @Res() res: Response) {
+    try {
+      console.log('🔑 Google OAuth callback recibido');
+      console.log('👤 Usuario de Google:', req.user);
+      
+      // req.user contiene los datos del perfil de Google
+      const jwt = await this.authService.loginWithGoogle(req.user);
+      console.log('✅ JWT generado:', jwt.access_token.substring(0, 20) + '...');
+      
+      // Redirigir al frontend con el token
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${jwt.access_token}`;
+      console.log('🔄 Redirigiendo a:', redirectUrl);
+      
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('❌ Error en Google OAuth callback:', error);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+      res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
+    }
+  }
 }
+

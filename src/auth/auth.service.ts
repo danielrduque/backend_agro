@@ -99,4 +99,28 @@ export class AuthService {
       console.error('Error al añadir token a la blacklist:', error);
     }
   }
+
+  /**
+   * @description Login con Google OAuth. Crea usuario si no existe.
+   */
+  async loginWithGoogle(googleUser: any) {
+    // Buscar si el usuario ya existe por email/username
+    let user = await this.usuariosService.findOneByUsername(googleUser.email);
+
+    if (!user) {
+      // Crear nuevo usuario con datos de Google
+      user = await this.usuariosService.createGoogleUser({
+        nombre_usuario: googleUser.email,
+        nombre_completo: `${googleUser.firstName} ${googleUser.lastName}`,
+        email: googleUser.email,
+        google_id: googleUser.accessToken,
+      });
+    }
+
+    // Generar JWT
+    const payload = { username: user.nombre_usuario, sub: user.usuario_id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
+  }
 }

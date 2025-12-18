@@ -5,12 +5,14 @@ import { Repository } from 'typeorm';
 import { Producto } from './entities/producto.entity';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class ProductosService {
   constructor(
     @InjectRepository(Producto)
     private readonly productoRepository: Repository<Producto>,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   /**
@@ -20,7 +22,12 @@ export class ProductosService {
    */
   async create(createProductoDto: CreateProductoDto): Promise<Producto> {
     const nuevoProducto = this.productoRepository.create(createProductoDto);
-    return this.productoRepository.save(nuevoProducto);
+    const savedProducto = await this.productoRepository.save(nuevoProducto);
+    
+    // Notificar nuevo producto
+    this.notificationsGateway.notifyNewProduct(savedProducto);
+    
+    return savedProducto;
   }
 
   /**

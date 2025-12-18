@@ -5,12 +5,14 @@ import { Repository } from 'typeorm';
 import { Cliente } from './entities/cliente.entity';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class ClientesService {
   constructor(
     @InjectRepository(Cliente)
     private readonly clienteRepository: Repository<Cliente>,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   /**
@@ -20,7 +22,12 @@ export class ClientesService {
    */
   async create(createClienteDto: CreateClienteDto): Promise<Cliente> {
     const cliente = this.clienteRepository.create(createClienteDto);
-    return this.clienteRepository.save(cliente);
+    const savedCliente = await this.clienteRepository.save(cliente);
+    
+    // Notificar nuevo cliente
+    this.notificationsGateway.notifyNewClient(savedCliente);
+    
+    return savedCliente;
   }
 
   /**

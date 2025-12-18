@@ -14,6 +14,7 @@ import { Gasto } from '../gastos/entities/gasto.entity';
 import { AbonoCliente } from '../abonos-clientes/entities/abono-cliente.entity';
 import { AbonoProveedor } from '../abonos-proveedores/entities/abono-proveedor.entity';
 import { SesionCajaEstado } from '../sesiones-caja-estados/entities/sesion-caja-estado.entity';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 // Asumimos que los IDs de los estados son fijos.
 const ESTADO_ABIERTA = 1;
@@ -25,6 +26,7 @@ export class SesionesCajaService {
     @InjectRepository(SesionCaja)
     private readonly sesionCajaRepository: Repository<SesionCaja>,
     private readonly dataSource: DataSource,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   async findAll(): Promise<SesionCaja[]> {
@@ -57,8 +59,15 @@ export class SesionesCajaService {
     };
 
     const nuevaSesion = this.sesionCajaRepository.create(nuevaSesionData);
+    const savedSesion = await this.sesionCajaRepository.save(nuevaSesion);
 
-    return this.sesionCajaRepository.save(nuevaSesion);
+    // Notificar apertura de caja
+    this.notificationsGateway.notifySessionOpened(
+      { monto_inicial: createSesionDto.monto_base_inicial },
+      `Usuario #${createSesionDto.usuario_id}`,
+    );
+
+    return savedSesion;
   }
 
   async cerrarCaja(
@@ -67,7 +76,7 @@ export class SesionesCajaService {
   ): Promise<SesionCaja> {
     const sesion = await this.sesionCajaRepository.findOne({
       where: { sesion_id: id },
-      relations: ['estado'],
+      relations: ['estado', 'usuario'],
     });
 
     if (!sesion) {
@@ -102,7 +111,15 @@ export class SesionesCajaService {
     sesion.diferencia = diferencia;
     sesion.estado = { id: ESTADO_CERRADA } as SesionCajaEstado;
 
-    return this.sesionCajaRepository.save(sesion);
+    const savedSesion = await this.sesionCajaRepository.save(sesion);
+
+    // Notificar cierre de caja
+    this.notificationsGateway.notifySessionClosed(
+      { monto_final: cerrarSesionDto.monto_contado_final },
+      sesion.usuario?.nombre_completo || sesion.usuario?.nombre_usuario || `Usuario`,
+    );
+
+    return savedSesion;
   }
 
   async obtenerEstadoActual(cajaId: number) {

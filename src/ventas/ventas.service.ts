@@ -12,7 +12,8 @@ import { CuentaPorCobrar } from '../cuentas-por-cobrar/entities/cuenta-por-cobra
 import { VentaEstado } from '../ventas-estados/entities/venta-estado.entity';
 import { MetodoPago } from '../metodos-pago/entities/metodo-pago.entity';
 import { DetalleVenta } from '../detalle-ventas/entities/detalle-venta.entity';
-import { Cliente } from '../clientes/entities/cliente.entity'; // 👈 IMPORTADO: Para consultar datos del cliente
+import { Cliente } from '../clientes/entities/cliente.entity';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class VentasService {
@@ -22,6 +23,7 @@ export class VentasService {
     @InjectRepository(Producto)
     private readonly productoRepository: Repository<Producto>,
     private readonly dataSource: DataSource,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   async create(createVentaDto: CreateVentaDto, user: any): Promise<Venta> {
@@ -159,7 +161,24 @@ export class VentasService {
       }
 
       await queryRunner.commitTransaction();
-      return this.findOne(ventaGuardada.venta_id);
+
+      // Obtener venta completa con relaciones para la notificación
+      const ventaCompleta = await this.findOne(ventaGuardada.venta_id);
+
+      // Emitir notificación en tiempo real de nueva venta
+      this.notificationsGateway.notifyNewSale(ventaCompleta);
+
+      // Verificar si algún producto quedó con stock bajo
+      for (const detalle of createVentaDto.detalles) {
+        const productoActualizado = await this.productoRepository.findOne({
+          where: { producto_id: detalle.producto_id },
+        });
+        if (productoActualizado && Number(productoActualizado.stock_actual) <= 5) {
+          this.notificationsGateway.notifyLowStock(productoActualizado);
+        }
+      }
+
+      return ventaCompleta;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;

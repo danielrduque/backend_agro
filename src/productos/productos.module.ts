@@ -20,5 +20,6 @@ import { Proveedor } from '../proveedores/entities/proveedor.entity';
   ],
   controllers: [ProductosController],
   providers: [ProductosService],
+  exports: [ProductosService],
 })
 export class ProductosModule {}

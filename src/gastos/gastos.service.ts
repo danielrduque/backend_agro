@@ -18,8 +18,21 @@ export class GastosService {
    * @returns El gasto creado.
    */
   async create(createGastoDto: CreateGastoDto): Promise<Gasto> {
-    const nuevoGasto = this.gastoRepository.create(createGastoDto);
-    return this.gastoRepository.save(nuevoGasto);
+    const gasto = new Gasto();
+    Object.assign(gasto, {
+      usuario: { usuario_id: createGastoDto.usuario_id },
+      categoria_gasto: { categoria_gasto_id: createGastoDto.categoria_gasto_id },
+      metodo_pago: { id: createGastoDto.metodo_pago_id },
+      monto: createGastoDto.monto,
+      descripcion: createGastoDto.descripcion,
+    });
+
+    // Only set sesion_caja if provided
+    if (createGastoDto.sesion_caja_id) {
+      gasto.sesion_caja = { sesion_id: createGastoDto.sesion_caja_id } as any;
+    }
+
+    return this.gastoRepository.save(gasto);
   }
 
   /**

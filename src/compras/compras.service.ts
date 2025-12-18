@@ -6,6 +6,7 @@ import { Compra } from './entities/compra.entity';
 import { CreateCompraDto } from './dto/create-compra.dto';
 import { Producto } from '../productos/entities/producto.entity';
 import { DetalleCompra } from '../detalle-compras/entities/detalle-compra.entity';
+import { Gasto } from '../gastos/entities/gasto.entity';
 
 @Injectable()
 export class ComprasService {
@@ -18,24 +19,31 @@ export class ComprasService {
   ) {}
 
   /**
-   * @description Crea un registro de compra y actualiza el stock de productos.
+   * @description Crea un registro de compra, actualiza el stock de productos,
+   * y opcionalmente crea un gasto si se proporciona sesion_caja_id.
    * @param createCompraDto Los datos para la nueva compra.
    * @returns La compra creada con sus detalles.
    */
   async create(createCompraDto: CreateCompraDto): Promise<Compra> {
-    // Usamos una transacción (QueryRunner) para asegurar que la actualización
-    // del stock y la creación de la compra sean una sola operación (atómica).
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.startTransaction(); // <-- "Modo 'Todo o Nada' activado"
+    await queryRunner.startTransaction();
 
     try {
-      const compra = this.compraRepository.create(createCompraDto);
+      const compra = new Compra();
+      Object.assign(compra, {
+        proveedor: { proveedor_id: createCompraDto.proveedor_id },
+        usuario: { usuario_id: createCompraDto.usuario_id },
+        metodo_pago: { id: createCompraDto.metodo_pago_id },
+        numero_factura_proveedor: createCompraDto.numero_factura_proveedor,
+        subtotal: createCompraDto.subtotal,
+        impuestos: createCompraDto.impuestos,
+        total: createCompraDto.total,
+      });
       compra.detalles = [];
 
       // Iteramos sobre los detalles para actualizar el stock de cada producto
       for (const detalleDto of createCompraDto.detalles) {
-        // Buscamos el producto usando el "controlador" de la transacción
         const producto = await queryRunner.manager.findOne(Producto, {
           where: { producto_id: detalleDto.producto_id },
         });
@@ -46,20 +54,12 @@ export class ComprasService {
           );
         }
 
-        // --- ¡AQUÍ SE MANEJA LA CONCURRENCIA! ---
-        // Esta es la lógica clave: Aumentamos el stock.
+        // Aumentamos el stock
         producto.stock_actual =
           Number(producto.stock_actual) + Number(detalleDto.cantidad);
 
-        // *EXPLICACIÓN DE CONCURRENCIA*:
-        // Al igual que en Ventas, esta línea PONE EN ESPERA (bloquea)
-        // a cualquier otra persona (como un vendedor) que intente
-        // modificar ESTE MISMO producto.
-        // Así evitamos que una venta lea un stock "viejo"
-        // mientras la compra aún no se ha confirmado.
         await queryRunner.manager.save(producto);
 
-        // (Preparamos el detalle de la compra para guardarlo)
         const detalleCompra = queryRunner.manager.create(
           DetalleCompra,
           detalleDto,
@@ -68,23 +68,31 @@ export class ComprasService {
         compra.detalles.push(detalleCompra);
       }
 
-      // Guardamos la compra principal (aún "en borrador" dentro de la tx)
+      // Guardamos la compra
       const compraGuardada = await queryRunner.manager.save(compra);
 
-      // --- ¡ÉXITO! ---
-      // Si todo salió bien, "confirmamos" todos los cambios.
-      // El nuevo stock de los productos ahora es visible para todos.
+      // Si hay sesion_caja_id, crear un gasto asociado para descontar del arqueo
+      if (createCompraDto.sesion_caja_id) {
+        const gastoData = {
+          usuario: { usuario_id: createCompraDto.usuario_id },
+          sesion_caja: { sesion_id: createCompraDto.sesion_caja_id },
+          categoria_gasto: { categoria_gasto_id: 3 }, // Categoría "Compras" 
+          metodo_pago: { id: createCompraDto.metodo_pago_id },
+          monto: createCompraDto.total,
+          descripcion: `Compra #${compraGuardada.compra_id} - ${createCompraDto.numero_factura_proveedor || 'Sin factura'}`,
+        };
+
+        const gasto = queryRunner.manager.create(Gasto, gastoData as any);
+        await queryRunner.manager.save(gasto);
+      }
+
       await queryRunner.commitTransaction();
 
-      return this.findOne(compraGuardada.compra_id); // Devolvemos la compra completa
+      return this.findOne(compraGuardada.compra_id);
     } catch (error) {
-      // --- ¡FALLO! ---
-      // Si algo falló (ej. el producto no existía), revertimos TODO.
-      // El stock nunca se aumentó y la compra no se creó.
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
-      // Siempre liberamos el controlador al final.
       await queryRunner.release();
     }
   }

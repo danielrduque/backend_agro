@@ -31,5 +31,34 @@ export class UsuariosService {
     return this.usuarioRepository.findOne({ where: { nombre_usuario } });
   }
 
-  // Puedes añadir más métodos aquí si los necesitas (findAll, findOne, etc.)
+  async findAll(): Promise<Usuario[]> {
+    return this.usuarioRepository.find({
+      relations: ['rol'],
+      select: ['usuario_id', 'nombre_usuario', 'nombre_completo', 'activo'],
+    });
+  }
+
+  /**
+   * @description Crea un usuario desde autenticación con Google OAuth
+   */
+  async createGoogleUser(googleUserData: {
+    nombre_usuario: string;
+    nombre_completo: string;
+    email: string;
+    google_id: string;
+  }): Promise<Usuario> {
+    // Generar un hash de contraseña aleatorio para usuarios OAuth
+    const salt = await bcrypt.genSalt();
+    const randomPassword = Math.random().toString(36).slice(-12);
+    const hashedPassword = await bcrypt.hash(randomPassword, salt);
+
+    const nuevoUsuario = this.usuarioRepository.create({
+      nombre_usuario: googleUserData.nombre_usuario,
+      nombre_completo: googleUserData.nombre_completo,
+      hash_contrasena: hashedPassword,
+      activo: true,
+    });
+
+    return this.usuarioRepository.save(nuevoUsuario);
+  }
 }

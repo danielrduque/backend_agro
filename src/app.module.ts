@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientesModule } from './clientes/clientes.module';
@@ -23,18 +25,23 @@ import { DevolucionesModule } from './devoluciones/devoluciones.module';
 import { CotizacionesModule } from './cotizaciones/cotizaciones.module';
 import { SeedModule } from './seed/seed.module';
 import { ListasPreciosModule } from './listas-precios/listas-precios.module';
-import { PreciosProductoModule } from './precios-producto/precios-producto.module';
 import { ReportesModule } from './reportes/reportes.module';
+import { ProveedoresModule } from './proveedores/proveedores.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
+import { AuditInterceptor } from './audit-log/audit.interceptor';
+import { Neo4jModule } from './neo4j/neo4j.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // PostgreSQL (datos principales)
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         host: config.get('DB_HOST'),
-        // Aquí está la corrección
         port: parseInt(config.get('DB_PORT') || '5432', 10),
         username: config.get('DB_USER'),
         password: config.get('DB_PASS'),
@@ -44,7 +51,16 @@ import { ReportesModule } from './reportes/reportes.module';
         logging: config.get('TYPEORM_LOGGING') === 'true',
       }),
     }),
+    // MongoDB (logs de auditoría)
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.get('MONGODB_URI') || 'mongodb://localhost:27017/agro_audit',
+      }),
+    }),
     RedisModule,
+    AuditLogModule,
     ClientesModule,
     ProductosModule,
     VentasModule,
@@ -64,10 +80,20 @@ import { ReportesModule } from './reportes/reportes.module';
     CotizacionesModule,
     SeedModule,
     ListasPreciosModule,
-    PreciosProductoModule,
     ReportesModule,
+    ProveedoresModule,
+    NotificationsModule,
+    Neo4jModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Interceptor global para auditoría automática
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
+    },
+  ],
 })
 export class AppModule {}
+
